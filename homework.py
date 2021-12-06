@@ -41,8 +41,9 @@ HOMEWORK_STATUSES = {
 
 
 def send_message(bot, message):
-    """Отправляет сообщение в телеграм."""
+    """Отправляет сообщение в Телеграм."""
     bot.send_message(TELEGRAM_CHAT_ID, message)
+    logger.info('Сообщение отправлено')
 
 
 def get_api_answer(current_timestamp):
@@ -80,13 +81,21 @@ def check_response(response):
 
 
 def parse_status(homework):
-    """Возвращяет статус домашней работы."""
+    """Возвращает статус домашней работы."""
+    if 'homework_name' not in homework:
+        error_message = 'Ключ homework_name отсутствует'
+        logging.error(error_message)
+        raise KeyError(error_message)
+    if 'status' not in homework:
+        error_message = 'Ключ status отсутствует'
+        logging.error(error_message)
+        raise KeyError(error_message)
     homework_name = homework.get('homework_name')
     homework_status = homework.get('status')
     if homework_name is None or homework_status is None:
         return 'Работа не сдана на проверку'
     if homework_status not in HOMEWORK_STATUSES:
-        error_message = 'Неизвестный стутус домашне работы'
+        error_message = 'Неизвестный статус домашней работы'
         logging.error(error_message)
         raise Exception(error_message)
     verdict = HOMEWORK_STATUSES.get(homework_status)
