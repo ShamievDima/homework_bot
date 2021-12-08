@@ -60,8 +60,9 @@ def get_api_answer(current_timestamp):
             headers=HEADERS,
             params=params
         )
-    except ValueError:
-        logging.error('ENDPOINT недоступен')
+    except requests.exceptions.RequestException as error:
+        logging.error(f'Ошибка URL {error}')
+        raise SystemExit(error)
     if homework_statuses.status_code != HTTPStatus.OK:
         error_message = 'Ошибка Request'
         logging.error(error_message)
@@ -70,6 +71,7 @@ def get_api_answer(current_timestamp):
         response = homework_statuses.json()
     except Exception as error:
         logging.error(f'Нет ожидаемого ответа сервера {error}')
+        raise Exception(error)
     return response
 
 
@@ -86,12 +88,17 @@ def check_response(response):
         error_message = 'Ключ homeworks отсутствует'
         logging.error(error_message)
         raise KeyError(error_message)
-    if len(response) == 0:
+    homeworks = response.get('homeworks')
+    if not isinstance(homeworks, list):
+        error_message = 'homeworks не является списком'
+        logging.error(error_message)
+        raise TypeError(error_message)
+    if len(homeworks) == 0:
         error_message = 'Пустой список домашних работ'
         logging.error(error_message)
         raise ValueError(error_message)
-    homeworks = response.get('homeworks')
-    return homeworks[0]
+    homework = homeworks[0]
+    return homework
 
 
 def parse_status(homework):
@@ -127,13 +134,12 @@ def check_tokens():
 
 def main():
     """Основная логика работы бота."""
-    print(check_tokens())
     if not check_tokens():
         error_message = 'Токены недоступны'
         logging.error(error_message)
         raise Exception(error_message)
     bot = Bot(token=TELEGRAM_TOKEN)
-    current_timestamp = 0  # int(time.time())
+    current_timestamp = int(time.time())
 
     while True:
         try:
